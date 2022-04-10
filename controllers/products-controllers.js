@@ -1,5 +1,9 @@
 const Product = require('../models/product');
+const Category = require('../models/category');
+const User = require('../models/user');
 const HttpError = require('../models/http-error');
+const { default: mongoose } = require('mongoose');
+const product = require('../models/product');
 
 exports.getAll = (req, res, next) => {
 
@@ -39,7 +43,37 @@ exports.getById = (req, res, next) => {
 exports.delete = (req, res, next) => {
     const productId = req.params.productId;
 
-    Product.findByIdAndDelete(productId)
+    let deletedProduct;
+    let sess;
+    
+    Product.findById(productId)
+        .populate('createdByUserId')
+        .populate('category')
+        .then(deletedProduct => {
+            if (!deletedProduct) {
+                return next(new HttpError('Could not find product for this id.', 404))
+            }
+            if (deletedProduct.createdByUserId !== req.userData.userId) {
+                return next(new HttpError('You are not allowed to delete this product.', 401))
+            }
+            return mongoose.startSession();
+        })
+        .then((sess) => {
+            sess.startTransaction();
+            return deletedProduct.remove({ session: sess })
+        })
+        .then(() => {
+            deletedProduct.createdByUserId.products.pull(deletedProduct);
+            return deletedProduct.createdByUserId.save({ session: sess })
+
+        })
+        .then(() => {
+            deletedProduct.category.products.pull(deletedProduct);
+            return deletedProduct.category.save({ session: sess })
+        })
+        .then(() => {
+            return sess.commitTransaction();
+        })
         .then(() => {
             res.status(200).json({ message: 'Deleted product.' })
         })
@@ -51,7 +85,6 @@ exports.delete = (req, res, next) => {
 
 
 exports.update = async (req, res, next) => {
-    // const { name, price, description, images, category } = req.body;
     const { name, price } = req.body;
     const productId = req.params.productId;
     let product;
@@ -64,9 +97,6 @@ exports.update = async (req, res, next) => {
 
     product.name = name;
     product.price = price;
-    // product.description = description;
-    // product.images = images;
-    // product.category = category;
     try {
         await product.save();
 
@@ -81,24 +111,51 @@ exports.update = async (req, res, next) => {
 
 exports.add = async (req, res, next) => {
 
-    // const { name, price, description, images, category } = req.body;
-    const { name, price, description, images } = req.body;
+    const { name, price, description, images, category, createdByUserId } = req.body;
 
     const createdProduct = new Product({
         name,
         price,
         description,
         images,
-        // category
-    });
+        category,
+        createdByUserId
+    })
+    let user;
     try {
-        await createdProduct.save();
+        user = await User.findById(createdByUserId)
+    } catch (err) {
+        return next(new HttpError('Creating product failed, please try again.', 500));
+    }
+
+    if (!user) {
+        return next(new HttpError('Could not find user for provided id.', 404));
+    }
+
+    let cat;
+    try {
+        cat = await Category.findById(category)
+    } catch (err) {
+        return next(new HttpError('Creating product failed, please try again.', 500));
+    }
+    if (!cat) {
+        return next(new HttpError('Could not find category for provided id.', 404));
+    }
+    try {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        await createdProduct.save({ session: session });
+        user.products.push(createdProduct);
+        await user.save({ session: session });
+        cat.products.push(createdProduct);
+        await cat.save({ session: session })
+        await session.commitTransaction();
 
     } catch (err) {
         return next(new HttpError('Something went wrong, could not create new product.', 500))
 
     }
-    res.status(200).json({ product: createdProduct.toObject({ getters: true }) })
+    res.status(20).json({ product: createdProduct.toObject({ getters: true }) })
 
 };
 
