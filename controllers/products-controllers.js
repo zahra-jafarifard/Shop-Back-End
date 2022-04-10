@@ -45,7 +45,7 @@ exports.delete = (req, res, next) => {
 
     let deletedProduct;
     let sess;
-    
+
     Product.findById(productId)
         .populate('createdByUserId')
         .populate('category')
