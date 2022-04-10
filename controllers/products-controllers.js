@@ -44,7 +44,7 @@ exports.delete = (req, res, next) => {
     const productId = req.params.productId;
 
     let deletedProduct;
-    let sess;
+    let _session;
 
     Product.findById(productId)
         .populate('createdByUserId')
@@ -58,21 +58,21 @@ exports.delete = (req, res, next) => {
             }
             return mongoose.startSession();
         })
-        .then((sess) => {
-            sess.startTransaction();
-            return deletedProduct.remove({ session: sess })
+        .then((_session) => {
+            _session.startTransaction();
+            return deletedProduct.remove({ session: _session })
         })
         .then(() => {
             deletedProduct.createdByUserId.products.pull(deletedProduct);
-            return deletedProduct.createdByUserId.save({ session: sess })
+            return deletedProduct.createdByUserId.save({ session: _session })
 
         })
         .then(() => {
             deletedProduct.category.products.pull(deletedProduct);
-            return deletedProduct.category.save({ session: sess })
+            return deletedProduct.category.save({ session: _session })
         })
         .then(() => {
-            return sess.commitTransaction();
+            return _session.commitTransaction();
         })
         .then(() => {
             res.status(200).json({ message: 'Deleted product.' })
@@ -131,14 +131,14 @@ exports.add = async (req, res, next) => {
     if (!user) {
         return next(new HttpError('Could not find user for provided id.', 404));
     }
-
-    let cat;
+    
+    let _category; 
     try {
-        cat = await Category.findById(category)
+        _category = await Category.findById(category)
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
-    if (!cat) {
+    if (!_category) {
         return next(new HttpError('Could not find category for provided id.', 404));
     }
     try {
@@ -147,8 +147,8 @@ exports.add = async (req, res, next) => {
         await createdProduct.save({ session: session });
         user.products.push(createdProduct);
         await user.save({ session: session });
-        cat.products.push(createdProduct);
-        await cat.save({ session: session })
+        _category.products.push(createdProduct);
+        await _category.save({ session: session })
         await session.commitTransaction();
 
     } catch (err) {
@@ -160,19 +160,3 @@ exports.add = async (req, res, next) => {
 };
 
 
-exports.getProductsByCategory = (req, res, next) => {
-
-    const { categoryId } = req.body;
-
-    Product.find({ category: categoryId })
-        .then(products => {
-            if (!products) {
-                return next(new HttpError('Something went wrong, could not find products for this category.', 404))
-            }
-            res.status(200).json({ products: products })
-        })
-        .catch(err => {
-            const error = new HttpError(err.message, 500)
-            return next(error)
-        })
-};

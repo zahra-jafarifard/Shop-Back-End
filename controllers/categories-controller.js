@@ -61,3 +61,19 @@ exports.update = async (req, res, next) => {
 };
 
 
+exports.getProductsByCategory = (req, res, next) => {
+
+    const { categoryId } = req.params.categoryId;
+
+    Category.findById(categoryId).populate('products')
+        .then(products => {
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products for this category.', 404))
+            }
+            res.status(200).json({ products: products })
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+};
