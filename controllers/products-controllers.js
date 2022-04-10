@@ -155,7 +155,7 @@ exports.add = async (req, res, next) => {
         return next(new HttpError('Something went wrong, could not create new product.', 500))
 
     }
-    res.status(20).json({ product: createdProduct.toObject({ getters: true }) })
+    res.status(201).json({ product: createdProduct.toObject({ getters: true }) })
 
 };
 

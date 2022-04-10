@@ -1,23 +1,63 @@
+const Category = require('../models/category');
+const HttpError = require('../models/http-error');
+
+
 exports.getAll = (req, res, next) => {
-    console.log('helo from cat controler')
+    return Category.find().exec()
+        .then(categories => {
+            if (!categories) {
+                return next(new HttpError('Something went wrong, could not find categories.', 404))
+            }
+            res.status(200).json({ categories: categories.map(category => category.toObject({ getters: true })) });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
 };
 
-exports.add = (req, res, next) => {
-    console.log('helo from cat controler')
+exports.add = async (req, res, next) => {
+
+    const { name, parentId } = req.body;
+
+    const createdCategory = new Category({
+        name,
+        parentId
+    });
+
+    try {
+        await createdCategory.save();
+    } catch (err) {
+        return next(new HttpError('Something went wrong, could not create new category.', 500))
+    }
+    res.status(201).json({ category: createdCategory.toObject({ getters: true }) })
+
 };
 
-exports.update = (req, res, next) => {
+exports.update = async (req, res, next) => {
     const categoryId = req.params.categoryId;
-    console.log('helo from cat controler')
+
+    const { name, parentId } = req.body;
+
+    let category;
+    try {
+        category = await Category.findById(categoryId)
+
+    } catch (err) {
+        return next(new HttpError('Something went wrong, could not update category.', 500))
+    }
+
+    category.name = name;
+    category.parentId = parentId;
+    try {
+        await category.save();
+
+    } catch (err) {
+        return next(new HttpError('Something went wrong, could not update category.', 500))
+
+    }
+
+    res.status(200).json(({ category: category.toObject({ getters: true }) }))
 };
 
-exports.delete = (req, res, next) => {
-    const categoryId = req.params.categoryId;
-
-    console.log('helo from cat controler')
-};
-
-exports.getAllByParentId = (req, res, next) => {
-    console.log('helo from cat controler')
-};
 
