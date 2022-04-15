@@ -3,8 +3,10 @@ const HttpError = require('../models/http-error');
 
 
 exports.getAll = (req, res, next) => {
-    return Category.find().exec()
+    return Category.find({parentId: { $ne: '0' }}).populate('parentId').
+    exec() 
         .then(categories => {
+            console.log(categories)
             if (!categories) {
                 return next(new HttpError('Something went wrong, could not find categories.', 404))
             }
@@ -22,9 +24,9 @@ exports.add = async (req, res, next) => {
 
     const createdCategory = new Category({
         name,
-        parentId
-    });
-
+        parentId : parentId ? parentId : 0
+        });
+    console.log(createdCategory)
     try {
         await createdCategory.save();
     } catch (err) {

@@ -11,6 +11,14 @@ const rollsRoutes = require('./routes/rolls-routes');
 const app = express();
 app.use(bodyParser.json());
 
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,PATCH,OPTION');
+    res.header('Access-Control-Allow-Headers', 'Content-Type , Accept , Authorization , Origin , X-Requested-With' );
+
+    next();
+})
+
 app.use('/products', productsRoutes);
 app.use('/users', usersRoutes);
 app.use('/categories', categorisRoutes);
@@ -29,9 +37,9 @@ app.use((error, req, res, next) => {
     res.status(error.code || 500).json({ message: error.message || 'An unknown error occurred!' })
 
 })
-mongoose.connect('mongodb://localhost/Shop')
+mongoose.connect('mongodb+srv://zahradb:iN7HDmrgLw7uiMbg@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
     .then(() => {
-        app.listen(3000);
+        app.listen(5000);
         console.log('Connected...')
     })
     .catch(err => {

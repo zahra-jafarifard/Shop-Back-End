@@ -1,9 +1,10 @@
+const mongoose = require('mongoose');
+
+
 const Product = require('../models/product');
 const Category = require('../models/category');
 const User = require('../models/user');
 const HttpError = require('../models/http-error');
-const { default: mongoose } = require('mongoose');
-const product = require('../models/product');
 
 exports.getAll = (req, res, next) => {
 
@@ -24,7 +25,6 @@ exports.getAll = (req, res, next) => {
 
 exports.getById = (req, res, next) => {
     const productId = req.params.productId;
-    // console.log(productId)
 
     return Product.findById(productId)
         .then(product => {
@@ -40,47 +40,53 @@ exports.getById = (req, res, next) => {
 };
 
 
-exports.delete = (req, res, next) => {
-    const productId = req.params.productId;
+exports.delete = async (req, res, next) => {
+
+    var productId = mongoose.Types.ObjectId(req.params.productId);
 
     let deletedProduct;
     let _session;
+    try {
+        deletedProduct = await Product.findById(productId).populate('category')
+        // .populate('createdByUserId')
 
-    Product.findById(productId)
-        .populate('createdByUserId')
-        .populate('category')
-        .then(deletedProduct => {
-            if (!deletedProduct) {
-                return next(new HttpError('Could not find product for this id.', 404))
-            }
-            if (deletedProduct.createdByUserId !== req.userData.userId) {
-                return next(new HttpError('You are not allowed to delete this product.', 401))
-            }
-            return mongoose.startSession();
-        })
-        .then((_session) => {
-            _session.startTransaction();
-            return deletedProduct.remove({ session: _session })
-        })
-        .then(() => {
-            deletedProduct.createdByUserId.products.pull(deletedProduct);
-            return deletedProduct.createdByUserId.save({ session: _session })
+    } catch (err) {
+        return next(new HttpError('Something went wrong, could not find product.', 500))
+    }
 
-        })
-        .then(() => {
-            deletedProduct.category.products.pull(deletedProduct);
-            return deletedProduct.category.save({ session: _session })
-        })
-        .then(() => {
-            return _session.commitTransaction();
-        })
-        .then(() => {
-            res.status(200).json({ message: 'Deleted product.' })
-        })
-        .catch(err => {
-            const error = new HttpError(err.message, 500)
-            return next(error)
-        })
+    if (!deletedProduct) {
+        return next(new HttpError('Could not find product for this id.', 404))
+    }
+
+    if (deletedProduct.createdByUserId.toString() !== '625456a9156b5221202c6a47') {
+        return next(new HttpError('You are not allowed to delete this product.', 401))
+    }
+
+    _session = await mongoose.startSession();
+    _session.startTransaction();
+    try {
+        await deletedProduct.remove({ session: _session })
+
+    } catch (err) {
+        return next(new HttpError('Could not delete this product.', 500))
+
+    }
+
+    // deletedProduct.createdByUserId.products.pull(deletedProduct);
+    // await deletedProduct.createdByUserId.save({ session: _session })
+    try {
+
+        deletedProduct.category.products.pull(deletedProduct);
+        await deletedProduct.category.save({ session: _session })
+    } catch (error) {
+        return next(new HttpError(error, 500))
+    }
+    try {
+        await _session.commitTransaction();
+    } catch (error) {
+        return next(new HttpError(error, 500))
+    }
+    res.status(200).json({ message: 'Deleted product.' })
 };
 
 
@@ -117,13 +123,13 @@ exports.add = async (req, res, next) => {
         name,
         price,
         description,
-        images,
+        images: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaZo3bqj5AVN8PtxLRolO8Zr-ZzcQGf7GMoA&usqp=CAU",
         category,
         createdByUserId
     })
     let user;
     try {
-        user = await User.findById(createdByUserId)
+        user = await User.findById("6254477242a4797d06e7b652")
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
@@ -131,10 +137,10 @@ exports.add = async (req, res, next) => {
     if (!user) {
         return next(new HttpError('Could not find user for provided id.', 404));
     }
-    
-    let _category; 
+
+    let _category;
     try {
-        _category = await Category.findById(category)
+        _category = await Category.findById("625456f0156b5221202c6a4f")
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
