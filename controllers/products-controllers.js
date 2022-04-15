@@ -8,7 +8,7 @@ const HttpError = require('../models/http-error');
 
 exports.getAll = (req, res, next) => {
 
-    return Product.find().exec()
+    return Product.find().populate('category')
         .then(products => {
             if (!products) {
                 return next(new HttpError('Something went wrong, could not find products.', 404))
@@ -23,6 +23,31 @@ exports.getAll = (req, res, next) => {
 };
 
 
+exports.getCategories = (req, res, next) => {
+    return Category.find()
+        .then(_categories => {
+            if (!_categories) {
+                return next(new HttpError('Something went wrong, could not find categories.', 404))
+            }
+            const categories= _categories.filter(category => category.parentId );
+            const parents= _categories.filter(category => !category.parentId );
+            let parArr=[];
+            categories.forEach(cat => {
+                parents.forEach(par => {
+                   if(cat.parentId.toString() === par._id.toString()){
+                       parArr.push({id:cat._id , name:par.name+"-->"+cat.name})
+                   }
+               });
+            });
+
+            console.log(parArr)
+            res.status(200).json({ categories: parArr});
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+};
 exports.getById = (req, res, next) => {
     const productId = req.params.productId;
 
@@ -91,8 +116,8 @@ exports.delete = async (req, res, next) => {
 
 
 exports.update = async (req, res, next) => {
-    const { name, price } = req.body;
-    const productId = req.params.productId;
+    const { name, price , description } = req.body;
+    const productId = mongoose.Types.ObjectId(req.params.productId);
     let product;
     try {
         product = await Product.findById(productId)
@@ -103,6 +128,7 @@ exports.update = async (req, res, next) => {
 
     product.name = name;
     product.price = price;
+    product.description = description
     try {
         await product.save();
 
@@ -140,7 +166,7 @@ exports.add = async (req, res, next) => {
 
     let _category;
     try {
-        _category = await Category.findById("625456f0156b5221202c6a4f")
+        _category = await Category.findById(category)
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
