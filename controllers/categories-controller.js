@@ -12,7 +12,7 @@ exports.getAll = (req, res, next) => {
             if (!categories) {
                 return next(new HttpError('Something went wrong, could not find categories.', 404))
             }
-            res.status(200).json({ categories: categories.map(category => category.toObject({ getters: true })) });
+            res.status(200).json({ fetchData: categories.map(category => category.toObject({ getters: true })) });
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -27,7 +27,7 @@ exports.getParents = (req, res, next) => {
             if (!_parents) {
                 return next(new HttpError('Something went wrong, could not find parents.', 404))
             }
-            res.status(200).json({ parents: parents.map(parent => parent.toObject({ getters: true })) });
+            res.status(200).json({ fetchData: parents.map(parent => parent.toObject({ getters: true })) });
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -38,7 +38,6 @@ exports.getParents = (req, res, next) => {
 exports.add = async (req, res, next) => {
 
     const { name, parent } = req.body;
-    // console.log(req.body)
     let createdCategory;
     if (req.body.parent.length !== 0) {
         createdCategory = new Category({
@@ -69,7 +68,7 @@ exports.getById = (req, res, next) => {
             if (!category) {
                 return next(new HttpError('Something went wrong, could not find category for this ID.', 404))
             }
-            res.json({ category: category.toObject({ getters: true }) })
+            res.json({ fetchData: category.toObject({ getters: true }) })
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -81,7 +80,6 @@ exports.update = async (req, res, next) => {
     const categoryId = req.params.categoryId;
 
     const { name, parentId } = req.body;
-    console.log(req.body)
 
     let category;
     try {
@@ -105,7 +103,6 @@ exports.update = async (req, res, next) => {
 };
 exports.delete = async (req, res, next) => {
     const categoryId = mongoose.Types.ObjectId(req.params.categoryId);
-    // console.log(categoryId);
 
     let deletedCategory;
     let _session;
@@ -117,7 +114,6 @@ exports.delete = async (req, res, next) => {
     } catch (err) {
         return next(new HttpError('Something went wrong, could not find category.', 500))
     }
-    // console.log('deletedCategory', deletedCategory);
    
     if (!deletedCategory) {
         return next(new HttpError('Could not find category for this id.', 404))
@@ -131,7 +127,6 @@ exports.delete = async (req, res, next) => {
         return next(new HttpError('You are not allowed to delete this category.', 401))
     }
   
-    // console.log( 'ddddd',deletedCategory);
     // deletedCategory.createdByUserId.products.pull(deletedCategory);
     // await deletedCategory.createdByUserId.save({ session: _session })
 

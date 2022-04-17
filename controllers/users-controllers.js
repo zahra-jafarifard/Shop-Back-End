@@ -110,18 +110,15 @@ exports.update = async (req, res, next) => {
     let user;
     let hashedPassword;
     var objectId = mongoose.Types.ObjectId(userId);
-    console.log(req.body , objectId )
 
     try {
         user = await User.findById(objectId)
     } catch (err) {
-        console.log(err)
         return next(new HttpError(err, 500))
     }
     try {
         hashedPassword = await bcrypt.hash(password, 12);
     } catch (err) {
-        console.log(err)
         return next(new HttpError("Could not hashed password ", 500))
     }
     user.name = name;
@@ -133,8 +130,6 @@ exports.update = async (req, res, next) => {
     try {
         await user.save();
     } catch (err) {
-        console.log(err)
-
         return next(new HttpError('Could not create user, please try again.', 500))
     }
     res.status(201).json({ user: user.toObject({ getters: true }) })
@@ -184,11 +179,22 @@ exports.add = async (req, res, next) => {
 };
 
 exports.getAll = (req, res, next) => {
-    return User.find().populate('rollId')
-        .then(users => {
-            console.log(users[0])
-            res.status(200).json({ users: users.map(user => user.toObject({ getters: true })) })
+    const page = req.params.page
+    const per_page = req.params.per_page
+    // const delay = req.params.delay
+    return User.find().countDocuments()
+        .then(count => {
+            totalItem = count;
+            return User.find()
+                .skip(per_page * (page - 1))
+                .limit(per_page)
+
+                .populate('rollId')
+                .then(users => {
+                    res.status(200).json({ users: users.map(user => user.toObject({ getters: true })), total: totalItem })
+                })
         })
+
         .catch(err => {
             return next(new HttpError('Something went wrong, could not find users.', 500))
         })
@@ -198,8 +204,7 @@ exports.get = (req, res, next) => {
     const userId = req.params.userId;
     return User.findById(userId)
         .then(user => {
-            // console.log(user)
-            res.status(200).json({ user: user.toObject({ getters: true }) })
+            res.status(200).json({ fetchData: user.toObject({ getters: true }) })
         })
         .catch(err => {
             return next(new HttpError('Something went wrong, could not find user.', 500))
@@ -210,11 +215,10 @@ exports.delete = (req, res, next) => {
     const userId = req.params.userId;
     return User.findById(userId)
         .then(user => {
-            console.log(user)
             return user.remove()
         })
         .then(() => {
-            res.status(200).json({ message :'User Deleted Successfully...' })
+            res.status(200).json({ message: 'User Deleted Successfully...' })
         })
         .catch(err => {
             return next(new HttpError('Something went wrong, could not find user.', 500))

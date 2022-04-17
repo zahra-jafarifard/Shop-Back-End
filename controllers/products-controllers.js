@@ -13,7 +13,7 @@ exports.getAll = (req, res, next) => {
             if (!products) {
                 return next(new HttpError('Something went wrong, could not find products.', 404))
             }
-            res.json({ products: products.map(product => product.toObject({ getters: true })) });
+            res.json({ fetchData: products.map(product => product.toObject({ getters: true })) });
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -40,8 +40,7 @@ exports.getCategories = (req, res, next) => {
                });
             });
 
-            console.log(parArr)
-            res.status(200).json({ categories: parArr});
+            res.status(200).json({ fetchData: parArr});
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -56,7 +55,7 @@ exports.getById = (req, res, next) => {
             if (!product) {
                 return next(new HttpError('Something went wrong, could not find product for this ID.', 404))
             }
-            res.json({ product: product.toObject({ getters: true }) })
+            res.json({ fetchData: product.toObject({ getters: true }) })
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)

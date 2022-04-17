@@ -9,7 +9,7 @@ exports.getAll = (req, res, next) => {
             if (!rolls) {
                 return next(new HttpError('Something went wrong, could not find rolls.', 404))
             }
-            res.status(200).json({ rolls: rolls.map(roll => roll.toObject({ getters: true })) });
+            res.status(200).json({ fetchData: rolls.map(roll => roll.toObject({ getters: true })) });
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -90,7 +90,7 @@ exports.getById = (req, res, next) => {
             if (!roll) {
                 return next(new HttpError('Something went wrong, could not find roll  for this ID.', 404))
             }
-            res.json({ roll: roll.toObject({ getters: true }) })
+            res.json({ fetchData: roll.toObject({ getters: true }) })
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
