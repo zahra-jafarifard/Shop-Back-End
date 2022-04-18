@@ -15,7 +15,7 @@ exports.getAll = (req, res, next) => {
             res.status(200).json({ fetchData: categories.map(category => category.toObject({ getters: true })) });
         })
         .catch(err => {
-            const error = new HttpError(err.message, 500)
+            const error = new HttpError(err, 500)
             return next(error)
         })
 };
@@ -39,7 +39,7 @@ exports.add = async (req, res, next) => {
 
     const { name, parent } = req.body;
     let createdCategory;
-    if (req.body.parent.length !== 0) {
+    if (req.body.parent !== '') {
         createdCategory = new Category({
             name,
             parentId: parent
@@ -86,7 +86,7 @@ exports.update = async (req, res, next) => {
         category = await Category.findById(categoryId)
 
     } catch (err) {
-        return next(new HttpError('Something went wrong, could not update category.', 500))
+        return next(new HttpError('Something went wrong, could not find this category.', 500))
     }
 
     category.name = name;
@@ -103,6 +103,7 @@ exports.update = async (req, res, next) => {
 };
 exports.delete = async (req, res, next) => {
     const categoryId = mongoose.Types.ObjectId(req.params.categoryId);
+    console.log(req.body)
 
     let deletedCategory;
     let _session;

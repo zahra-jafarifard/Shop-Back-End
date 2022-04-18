@@ -28,7 +28,7 @@ exports.add = async (req, res, next) => {
     try {
         await createdRoll.save();
     } catch (err) {
-        return next(new HttpError('Something went wrong, could not create new roll.', 500))
+        return next(new HttpError('Something went wrong, could not create new roll.' || err, 500))
     }
     res.status(201).json({ roll: createdRoll.toObject({ getters: true }) })
 
@@ -64,12 +64,14 @@ exports.delete = async (req, res, next) => {
 
     let roll;
     try {
-        roll = await Roll.findById(rollId)
+        roll = await Roll.findById(rollId).populate('users')
 
     } catch (err) {
         return next(new HttpError('Something went wrong, could not remove roll.', 500))
     }
-
+    if (roll.users.length !== 0){
+        return next(new HttpError('You are not allowed to delete this roll.', 500))
+    }
     try {
         await roll.remove();
 

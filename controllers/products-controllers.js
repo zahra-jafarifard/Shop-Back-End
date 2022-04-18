@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-
 const Product = require('../models/product');
 const Category = require('../models/category');
 const User = require('../models/user');
@@ -8,7 +7,9 @@ const HttpError = require('../models/http-error');
 
 exports.getAll = (req, res, next) => {
 
-    return Product.find().populate('category')
+    return Product.find()
+    .populate('createdByUserId')
+    .populate('category')
         .then(products => {
             if (!products) {
                 return next(new HttpError('Something went wrong, could not find products.', 404))
@@ -82,7 +83,7 @@ exports.delete = async (req, res, next) => {
         return next(new HttpError('Could not find product for this id.', 404))
     }
 
-    if (deletedProduct.createdByUserId.toString() !== '625456a9156b5221202c6a47') {
+    if (deletedProduct.createdByUserId.toString() !== '625d634edcb4f9b5f10e8d9b') {
         return next(new HttpError('You are not allowed to delete this product.', 401))
     }
 
@@ -127,7 +128,8 @@ exports.update = async (req, res, next) => {
 
     product.name = name;
     product.price = price;
-    product.description = description
+    product.description = description;
+    product.image = req.file.path;
     try {
         await product.save();
 
@@ -142,19 +144,19 @@ exports.update = async (req, res, next) => {
 
 exports.add = async (req, res, next) => {
 
-    const { name, price, description, images, category, createdByUserId } = req.body;
-
+    const { name, price, description, category, createdByUserId } = req.body;
+console.log(req.body , 'ffff' , req.file)
     const createdProduct = new Product({
         name,
         price,
         description,
-        images: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTaZo3bqj5AVN8PtxLRolO8Zr-ZzcQGf7GMoA&usqp=CAU",
+        image: req.file.path,
         category,
-        createdByUserId
+        createdByUserId: '625d634edcb4f9b5f10e8d9b'
     })
     let user;
     try {
-        user = await User.findById("6254477242a4797d06e7b652")
+        user = await User.findById("625d634edcb4f9b5f10e8d9b")
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
@@ -172,6 +174,7 @@ exports.add = async (req, res, next) => {
     if (!_category) {
         return next(new HttpError('Could not find category for provided id.', 404));
     }
+    console.log(createdProduct, _category)
     try {
         const session = await mongoose.startSession();
         session.startTransaction();
@@ -183,7 +186,7 @@ exports.add = async (req, res, next) => {
         await session.commitTransaction();
 
     } catch (err) {
-        return next(new HttpError('Something went wrong, could not create new product.', 500))
+        return next(new HttpError(err, 500))
 
     }
     res.status(201).json({ product: createdProduct.toObject({ getters: true }) })

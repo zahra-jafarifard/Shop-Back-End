@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
     family: { type: String, required: true },
     mobile: { type: Number, required: true },
     email: { type: String, required: true },
-    image: { type: String, required: true },
+    image: { type: String },
     password: { type: String, required: true },
     rollId: { type: mongoose.Types.ObjectId, ref: 'Roll' },
     products: [{ type: mongoose.Types.ObjectId, required: true, ref: 'Product' }]
