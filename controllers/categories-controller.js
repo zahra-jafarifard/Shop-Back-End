@@ -103,7 +103,6 @@ exports.update = async (req, res, next) => {
 };
 exports.delete = async (req, res, next) => {
     const categoryId = mongoose.Types.ObjectId(req.params.categoryId);
-    console.log(req.body)
 
     let deletedCategory;
     let _session;
