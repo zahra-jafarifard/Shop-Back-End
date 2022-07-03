@@ -23,7 +23,6 @@ module.exports = (req, res, next) => {
         }
 
         req.userId = decodedToken.userId;
-        // req.userMobile = decodedToken.mobile;
 
         next();
     } catch (err) {

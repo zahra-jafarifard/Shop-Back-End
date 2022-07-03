@@ -9,6 +9,7 @@ const productsRoutes = require('./routes/products-routes');
 const usersRoutes = require('./routes/users-routes');
 const categorisRoutes = require('./routes/categories-routes');
 const rollsRoutes = require('./routes/rolls-routes');
+const clientsRoutes = require('./routes/clients-routes');
 
 const app = express();
 app.use(bodyParser.json());
@@ -16,8 +17,8 @@ app.use('/upload', express.static(path.join('upload')));
 
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', '*,GET, POST,OPTIONS, PUT, PATCH, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'content-type');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST,OPTIONS, PUT, PATCH, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'content-type , Authorization');
     res.setHeader('Access-Control-Allow-Credentials', true);
     next();
 });
@@ -26,6 +27,7 @@ app.use('/products', productsRoutes);
 app.use('/users', usersRoutes);
 app.use('/categories', categorisRoutes);
 app.use('/rolls', rollsRoutes);
+app.use('/clients', clientsRoutes);
 
 
 
@@ -45,9 +47,10 @@ app.use((error, req, res, next) => {
     res.status(error.code || 500).json({ message: error.message || 'An unknown error occurred!' })
 
 })
-// mongoose.connect('mongodb+srv://zahradb:iN7HDmrgLw7uiMbg@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://zahradb:iN7HDmrgLw7uiMbg@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
 // mongoose.connect('mongodb://localhost/Shop')
-mongoose.connect('mongodb+srv://zahrajf:kTbsiBf0KFpHOG0E@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
+
+// mongoose.connect('mongodb+srv://zahrajf:kTbsiBf0KFpHOG0E@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
     .then(() => {
         app.listen(5000);
         console.log('Connected...')

@@ -6,10 +6,9 @@ const User = require('../models/user');
 const HttpError = require('../models/http-error');
 
 exports.getAll = (req, res, next) => {
-
     return Product.find()
-    .populate('createdByUserId')
-    .populate('category')
+        .populate('createdByUserId')
+        .populate('category')
         .then(products => {
             if (!products) {
                 return next(new HttpError('Something went wrong, could not find products.', 404))
@@ -22,6 +21,132 @@ exports.getAll = (req, res, next) => {
         })
 
 };
+exports.getFavoriteProducts = (req, res, next) => {
+    let _favorites = [];
+    _favorites = req.body.favoriteProducts;
+
+    // console.log('fff', _favorites)
+
+    return Product.find({
+        '_id': { $in: _favorites }
+    },
+        '_id name price  image')
+        .then(products => {
+            // console.log('favprods', products)
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products.', 404))
+            }
+            res.json({ fetchData: products });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+
+};
+exports.getCartItems = (req, res, next) => {
+    let _cartItems = [];
+    _cartItems = req.body.cartItems;
+
+    console.log('fff', _cartItems)
+
+    return Product.find({
+        '_id': { $in: _cartItems }
+    },
+        '_id name price  image')
+        .then(products => {
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products.', 404))
+            }
+            res.json({ fetchData: products });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+
+};
+exports.getChildren = (req, res, next) => {
+    return Product.find()
+        .populate('category')
+
+        .then(products => {
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products.', 404))
+            }
+            let _children = [];
+            _children = products.filter(p => {
+                return p.category.parentId.toString() === '625d6b9b600f4e8ee1fe7b77'
+            })
+            // console.log('pppppppppp', _children)
+            res.json({ fetchData: _children });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+
+};
+exports.getMen = (req, res, next) => {
+    return Product.find()
+        .populate('category')
+
+        .then(products => {
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products.', 404))
+            }
+            let _children = [];
+            _children = products.filter(p => {
+                return p.category.parentId.toString() === '625d6b95600f4e8ee1fe7b73'
+            })
+            // console.log('pppppppppp', _children)
+            res.json({ fetchData: _children });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+
+};
+exports.getWomen = (req, res, next) => {
+    return Product.find()
+        .populate('category')
+
+        .then(products => {
+            if (!products) {
+                return next(new HttpError('Something went wrong, could not find products.', 404))
+            }
+            let _children = [];
+            _children = products.filter(p => {
+                return p.category.parentId.toString() === '625d6b80600f4e8ee1fe7b6f'
+            })
+            // console.log('pppppppppp', _children)
+            res.json({ fetchData: _children });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+
+};
+
+
+
+exports.getParentCategories = (req, res, next) => {
+    return Category.find()
+        .then(_categories => {
+            if (!_categories) {
+                return next(new HttpError('Something went wrong, could not find categories.', 404))
+            }
+            const parents = _categories.filter(category => !category.parentId);
+            // console.log('parents', parents)
+            res.status(200).json({ fetchData: parents });
+        })
+        .catch(err => {
+            const error = new HttpError(err.message, 500)
+            return next(error)
+        })
+};
 
 
 exports.getCategories = (req, res, next) => {
@@ -30,18 +155,18 @@ exports.getCategories = (req, res, next) => {
             if (!_categories) {
                 return next(new HttpError('Something went wrong, could not find categories.', 404))
             }
-            const categories= _categories.filter(category => category.parentId );
-            const parents= _categories.filter(category => !category.parentId );
-            let parArr=[];
+            const categories = _categories.filter(category => category.parentId);
+            const parents = _categories.filter(category => !category.parentId);
+            let parArr = [];
             categories.forEach(cat => {
                 parents.forEach(par => {
-                   if(cat.parentId.toString() === par._id.toString()){
-                       parArr.push({id:cat._id , name:par.name+"-->"+cat.name})
-                   }
-               });
+                    if (cat.parentId.toString() === par._id.toString()) {
+                        parArr.push({ id: cat._id, name: par.name + "-->" + cat.name })
+                    }
+                });
             });
 
-            res.status(200).json({ fetchData: parArr});
+            res.status(200).json({ fetchData: parArr });
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -51,12 +176,13 @@ exports.getCategories = (req, res, next) => {
 exports.getById = (req, res, next) => {
     const productId = req.params.productId;
 
-    return Product.findById(productId)
+    return Product.findById(productId , '_id name image price')
         .then(product => {
+            // console.log(product)
             if (!product) {
                 return next(new HttpError('Something went wrong, could not find product for this ID.', 404))
             }
-            res.json({ fetchData: product.toObject({ getters: true }) })
+            res.json({ fetchData: product })
         })
         .catch(err => {
             const error = new HttpError(err.message, 500)
@@ -73,7 +199,7 @@ exports.delete = async (req, res, next) => {
     let _session;
     try {
         deletedProduct = await Product.findById(productId).populate('category')
-        // .populate('createdByUserId')
+            .populate('createdByUserId')
 
     } catch (err) {
         return next(new HttpError('Something went wrong, could not find product.', 500))
@@ -83,7 +209,7 @@ exports.delete = async (req, res, next) => {
         return next(new HttpError('Could not find product for this id.', 404))
     }
 
-    if (deletedProduct.createdByUserId.toString() !== '625d634edcb4f9b5f10e8d9b') {
+    if (deletedProduct.createdByUserId._id.toString() !== req.userId) {
         return next(new HttpError('You are not allowed to delete this product.', 401))
     }
 
@@ -97,8 +223,13 @@ exports.delete = async (req, res, next) => {
 
     }
 
-    // deletedProduct.createdByUserId.products.pull(deletedProduct);
-    // await deletedProduct.createdByUserId.save({ session: _session })
+    try {
+        deletedProduct.createdByUserId.products.pull(deletedProduct);
+        await deletedProduct.createdByUserId.save({ session: _session })
+    }
+    catch (error) {
+        return next(new HttpError(error, 500))
+    }
     try {
 
         deletedProduct.category.products.pull(deletedProduct);
@@ -116,7 +247,7 @@ exports.delete = async (req, res, next) => {
 
 
 exports.update = async (req, res, next) => {
-    const { name, price , description } = req.body;
+    const { name, price, description, image } = req.body;
     const productId = mongoose.Types.ObjectId(req.params.productId);
     let product;
     try {
@@ -129,7 +260,8 @@ exports.update = async (req, res, next) => {
     product.name = name;
     product.price = price;
     product.description = description;
-    product.image = req.file.path;
+    product.image = image;
+
     try {
         await product.save();
 
@@ -145,18 +277,17 @@ exports.update = async (req, res, next) => {
 exports.add = async (req, res, next) => {
 
     const { name, price, description, category, createdByUserId } = req.body;
-console.log(req.body , 'ffff' , req.file)
     const createdProduct = new Product({
         name,
         price,
         description,
         image: req.file.path,
         category,
-        createdByUserId: '625d634edcb4f9b5f10e8d9b'
+        createdByUserId
     })
     let user;
     try {
-        user = await User.findById("625d634edcb4f9b5f10e8d9b")
+        user = await User.findById(createdByUserId)
     } catch (err) {
         return next(new HttpError('Creating product failed, please try again.', 500));
     }
@@ -174,7 +305,7 @@ console.log(req.body , 'ffff' , req.file)
     if (!_category) {
         return next(new HttpError('Could not find category for provided id.', 404));
     }
-    console.log(createdProduct, _category)
+    // console.log(createdProduct, _category)
     try {
         const session = await mongoose.startSession();
         session.startTransaction();

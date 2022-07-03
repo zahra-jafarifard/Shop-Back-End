@@ -11,7 +11,7 @@ const Roll = require('../models/roll');
 exports.signUp = async (req, res, next) => {
     const { name, family, mobile, email, password } = req.body;
 
-    const rollId ='625e3749e5c812cfa8e97463';
+    const rollId ='625c3fdd2cdb899849246d96';
     // const imageFile = req.file;
 
     const maybeFile = req.file
@@ -206,11 +206,11 @@ exports.signIn = async (req, res, next) => {
 
     let unhashedPassword;
     try {
-        unhashedPassword = await bcrypt.compare(password, existingUser.password)
+         unhashedPassword = await bcrypt.compare(password, existingUser.password)
     } catch (err) {
         return next(new HttpError('Could not log you in, please try again', 500))
     }
-
+    console.log( 'unhashedPassword',unhashedPassword)
     if (!unhashedPassword) {
         return next(new HttpError('Iinvalid password', 403))
     }
@@ -237,7 +237,7 @@ exports.update = async (req, res, next) => {
 
     const { name, family, mobile, email, password, roll, image } = req.body;
 
-    // console.log('reeeeq', req.body, req.file)
+    console.log('reeeeq', req.body)
 
     let user;
     let hashedPassword;
@@ -252,17 +252,18 @@ exports.update = async (req, res, next) => {
         return next(new HttpError(err, 500))
     }
     try {
-        hashedPassword = await bcrypt.hash(password, 12);
+        hashedPassword = password ? await bcrypt.hash(password, 12) : password  ;
     } catch (err) {
         return next(new HttpError(err, 500))
     }
+    
     user.name = name;
     user.family = family;
     user.mobile = mobile;
     user.email = email;
-    user.password = hashedPassword;
+    // user.password = hashedPassword;
     user.rollId = roll;
-    user.image =`upload\\${image}`;
+    user.image = image;
     try {
         await user.save();
     } catch (err) {
