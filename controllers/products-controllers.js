@@ -176,7 +176,7 @@ exports.getCategories = (req, res, next) => {
 exports.getById = (req, res, next) => {
     const productId = req.params.productId;
 
-    return Product.findById(productId , '_id name image price')
+    return Product.findById(productId, '_id name image price description')
         .then(product => {
             // console.log(product)
             if (!product) {

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 
 exports.getAll = (req, res, next) => {
-    return Roll.find().exec()
+    return Roll.find()
         .then(rolls => {
             if (!rolls) {
                 return next(new HttpError('Something went wrong, could not find rolls.', 404))

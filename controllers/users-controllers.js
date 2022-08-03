@@ -189,47 +189,7 @@ exports.delete = (req, res, next) => {
 }
 
 
-exports.signIn = async (req, res, next) => {
 
-    const { email, password } = req.body;
-    let existingUser;
-    console.log(req.body)
-    try {
-        existingUser = await User.findOne({ email });
-    } catch (err) {
-        return next(new HttpError('Logging in failed, please try again later.', 500))
-    }
-
-    if (!existingUser) {
-        return next(new HttpError('Invalid credentials, please try to sign in.', 403))
-    }
-
-    let unhashedPassword;
-    try {
-         unhashedPassword = await bcrypt.compare(password, existingUser.password)
-    } catch (err) {
-        return next(new HttpError('Could not log you in, please try again', 500))
-    }
-    console.log( 'unhashedPassword',unhashedPassword)
-    if (!unhashedPassword) {
-        return next(new HttpError('Iinvalid password', 403))
-    }
-    let token;
-    try {
-        token = jwt.sign(
-            { userId: existingUser.id, email: existingUser.email },
-            'mySecretKey',
-            { expiresIn: '1h' }
-        );
-
-    } catch (err) {
-        return next(new HttpError('Logging in failed, please try again later.', 500))
-    }
-
-    res.status(200).json({ userId: existingUser.id, email: existingUser.email, token: token })
-
-
-};
 
 exports.update = async (req, res, next) => {
 
@@ -237,14 +197,17 @@ exports.update = async (req, res, next) => {
 
     const { name, family, mobile, email, password, roll, image } = req.body;
 
-    console.log('reeeeq', req.body)
+    console.log('reeeeq', req.body )
+    if (req.file){
+        console.log('fillle' , req.file.path)
+    }
 
     let user;
     let hashedPassword;
 
     var objectId = mongoose.Types.ObjectId(userId);
 
-
+    
 
     try {
         user = await User.findById(objectId)
@@ -263,9 +226,10 @@ exports.update = async (req, res, next) => {
     user.email = email;
     // user.password = hashedPassword;
     user.rollId = roll;
-    user.image = image;
+    user.image = req.file ? req.file.path: image ;
     try {
         await user.save();
+        console.log('updated user...')
     } catch (err) {
         return next(new HttpError('Could not create user, please try again.', 500))
     }

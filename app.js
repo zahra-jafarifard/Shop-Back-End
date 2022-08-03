@@ -3,6 +3,10 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const path = require("path");
 const fs =require('fs');
+const { graphqlHTTP } = require('express-graphql');
+
+const graphqlSchema = require('./graphql/schema');
+const graphqlResolver = require('./controllers/qraphql-controllers');
 
 const HttpError = require('./models/http-error');
 const productsRoutes = require('./routes/products-routes');
@@ -20,8 +24,19 @@ app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST,OPTIONS, PUT, PATCH, DELETE');
     res.setHeader('Access-Control-Allow-Headers', 'content-type , Authorization');
     res.setHeader('Access-Control-Allow-Credentials', true);
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
     next();
 });
+app.use(
+    '/graphql',
+    graphqlHTTP({
+        schema: graphqlSchema,
+        rootValue: graphqlResolver,
+        graphiql: true,
+    })
+);
 
 app.use('/products', productsRoutes);
 app.use('/users', usersRoutes);
@@ -49,7 +64,6 @@ app.use((error, req, res, next) => {
 })
 mongoose.connect('mongodb+srv://zahradb:iN7HDmrgLw7uiMbg@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
 // mongoose.connect('mongodb://localhost/Shop')
-
 // mongoose.connect('mongodb+srv://zahrajf:kTbsiBf0KFpHOG0E@cluster0.gjaqs.mongodb.net/shop?retryWrites=true&w=majority')
     .then(() => {
         app.listen(5000);
