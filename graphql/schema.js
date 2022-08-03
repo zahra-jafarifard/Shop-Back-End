@@ -1,54 +1,34 @@
 const { buildSchema } = require('graphql');
 
 module.exports = buildSchema(`
-    type Product{
-        _id: ID!
-        name: String!
-        price: Float!
-        image: String!
-    }
-
-
-    type User {
-        _id: ID!
-        name: String!
-        family: String!
-        email: String!
-        mobile: String!
-        image: String!
-        password: String
-        rollId: String!
-        products: [Product!]!
-    }
-    
-
-    type RollsData {
-        _id: String
-        name: String
-        users: [User!]
-    }
-
-    
 
     type userData {
         userId: String! 
         email: String!
         token: String!
     }
-
-    input UserInputData {
-        email: String!
-        password: String!
+    type Rolls {
+        _id: String
+        name: String! 
     }
 
-    type RootQuery {
-        signIn(email: String!, password: String!): userData!
+    type Msg{
+        message : String!
     }
     
-    type RootMutation {
-        getAllRolls: RollsData!
+    type RootQuery {
+        signIn(email: String!, password: String!): userData!
+        getAllRolls: [Rolls]
+        getRollById (id : String!) : Rolls
     }
 
+     type RootMutation {
+        updateRoll(id: String! , name: String!): Msg!
+        addRoll(name: String!): Msg!
+        deleteRoll(id: String!): Msg!
+        
+    }
+    
     schema {
         query: RootQuery
         mutation: RootMutation

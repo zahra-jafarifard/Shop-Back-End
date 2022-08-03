@@ -188,9 +188,6 @@ exports.delete = (req, res, next) => {
 
 }
 
-
-
-
 exports.update = async (req, res, next) => {
 
     const userId = req.params.userId;

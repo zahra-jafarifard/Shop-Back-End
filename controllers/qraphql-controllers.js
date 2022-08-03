@@ -1,16 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const HttpError = require('../models/http-error');
 const User = require('../models/user')
+const Roll = require('../models/roll')
 
 module.exports = {
 
-  signIn: async function ({email , password}, req) {
-    // const email = args.email;
-    // const password = args.password;
-    // console.log('graphql...',args)
+  signIn: async ({ email, password }, req) => {
     let existingUser;
-    console.log('graphql...',email,password)
     try {
       existingUser = await User.findOne({ email });
     } catch (err) {
@@ -45,9 +43,92 @@ module.exports = {
 
   },
 
+  getAllRolls: () =>{
+    return Roll.find()
+      .then(rolls => {
+        if (!rolls) {
+          return new Error('Something went wrong, could not find rolls.', 404);
+        }
+        return rolls;
+      })
+      .catch(err => {
+        return new Error(err , 500);
+      })
+  },
 
+  updateRoll: async (args, req) => {
+    const rollId = args.id;
+    const name = args.name;
 
+    let roll;
+    try {
+      roll = await Roll.findById(rollId)
 
+    } catch (err) {
+      return next(new HttpError('Something went wrong, could not update roll.', 500))
+    }
 
+    roll.name = name;
+    try {
+      await roll.save();
+
+    } catch (err) {
+      return next(new HttpError('Something went wrong, could not update roll.', 500))
+
+    }
+
+    return { message: 'Roll Updated Successfully' }
+  },
+
+  addRoll: async ({name}, req) => {
+    const createdRoll = new Roll({
+      name
+    });
+
+    try {
+      await createdRoll.save();
+    } catch (err) {
+      return next(new HttpError('Something went wrong, could not create new roll.' || err, 500))
+    }
+    return { message: 'Roll added...' }
+  },
+  getRollById: async (args, req) => {
+    const rollId = args.id;
+
+    return Roll.findById(rollId)
+      .then(roll => {
+        if (!roll) {
+          return next(new HttpError('Something went wrong, could not find roll  for this ID.', 404))
+        }
+        return roll;
+      })
+      .catch(err => {
+        const error = new HttpError(err.message, 500)
+        return next(error)
+      });
+  },
+  deleteRoll: async (args, req) => {
+    const rollId = args.id;
+
+    let roll;
+    try {
+      roll = await Roll.findById(rollId).populate('users')
+
+    } catch (err) {
+      return next(new HttpError('Something went wrong, could not remove roll.', 500))
+    }
+    if (roll.users.length !== 0) {
+      return next(new HttpError('You are not allowed to delete this roll.', 500))
+    }
+    try {
+      await roll.remove();
+
+    } catch (err) {
+      return next(new HttpError('Something went wrong, could not remove roll.', 500))
+
+    }
+
+    return {message:'deleted...'}
+  }
 
 };
